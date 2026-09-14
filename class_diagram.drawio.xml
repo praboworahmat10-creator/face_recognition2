@@ -1,0 +1,64 @@
+<mxfile host="Electron" modified="2023-10-24T12:00:00.000Z" agent="Mozilla/5.0" version="22.0.4" type="device">
+  <diagram id="class_diagram" name="Class Diagram">
+    <mxGraphModel dx="1000" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Karyawan Class -->
+        <mxCell id="Karyawan" value="Karyawan" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="100" y="100" width="220" height="340" as="geometry" />
+        </mxCell>
+        <mxCell id="Karyawan_props" value="- id: BigInt&#10;- nik: String(20)&#10;- nama: String(100)&#10;- email: String(100)&#10;- password: String(255)&#10;- jenis_kelamin: Enum('L','P')&#10;- tanggal_lahir: Date&#10;- divisi: String(100)&#10;- jabatan: String(100)&#10;- status_karyawan: Enum&#10;- foto: String&#10;- face_descriptors: LongText&#10;- face_enrolled_at: Timestamp" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="Karyawan">
+          <mxGeometry y="26" width="220" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="Karyawan_divider" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="Karyawan">
+          <mxGeometry y="256" width="220" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="Karyawan_methods" value="+ presensis(): HasMany" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="Karyawan">
+          <mxGeometry y="264" width="220" height="76" as="geometry" />
+        </mxCell>
+
+        <!-- Presensi Class -->
+        <mxCell id="Presensi" value="Presensi" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="450" y="50" width="240" height="420" as="geometry" />
+        </mxCell>
+        <mxCell id="Presensi_props" value="- id: BigInt&#10;- karyawan_id: BigInt (FK)&#10;- nik: String(20)&#10;- nama: String(100)&#10;- waktu_datang: Timestamp&#10;- waktu_pulang: Timestamp&#10;- latitude: Decimal(10,8)&#10;- longitude: Decimal(11,8)&#10;- status: Enum&#10;- status_izin: Enum&#10;- keterangan: String(255)&#10;- bukti: String(255)&#10;- cuti_group_id: String(50)&#10;- cuti_start: Date&#10;- cuti_end: Date&#10;- izin_approved_at: Timestamp&#10;- izin_approved_by: BigInt (FK)&#10;- izin_reject_reason: String(255)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="Presensi">
+          <mxGeometry y="26" width="240" height="290" as="geometry" />
+        </mxCell>
+        <mxCell id="Presensi_divider" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="Presensi">
+          <mxGeometry y="316" width="240" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="Presensi_methods" value="+ karyawan(): BelongsTo&#10;+ approver(): BelongsTo" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="Presensi">
+          <mxGeometry y="324" width="240" height="96" as="geometry" />
+        </mxCell>
+
+        <!-- User Class -->
+        <mxCell id="User" value="User (Admin)" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="820" y="150" width="200" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="User_props" value="- id: BigInt&#10;- name: String&#10;- email: String&#10;- password: String&#10;- role: String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="User">
+          <mxGeometry y="26" width="200" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="User_divider" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="User">
+          <mxGeometry y="116" width="200" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="User_methods" value="+ approvedIzins(): HasMany" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="User">
+          <mxGeometry y="124" width="200" height="66" as="geometry" />
+        </mxCell>
+
+        <!-- Relations -->
+        <!-- Karyawan 1 to N Presensi -->
+        <mxCell id="Rel1" value="1..* (hasMany)" style="endArrow=diamondThin;endFill=1;endSize=12;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="Karyawan" target="Presensi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- User 1 to N Presensi (Approval) -->
+        <mxCell id="Rel2" value="1..* (approves)" style="endArrow=open;endFill=0;endSize=12;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;dashed=1;" edge="1" parent="1" source="User" target="Presensi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

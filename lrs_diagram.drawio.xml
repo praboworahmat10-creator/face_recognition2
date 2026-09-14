@@ -1,0 +1,104 @@
+  <mxfile host="Electron" modified="2023-10-24T12:00:00.000Z" agent="Mozilla/5.0" version="22.0.4" type="device">
+    <diagram id="lrs_diagram" name="Logical Record Structure">
+      <mxGraphModel dx="1000" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+        <root>
+          <mxCell id="0" />
+          <mxCell id="1" parent="0" />
+          
+          <!-- Karyawans Table -->
+          <mxCell id="Karyawans" value="karyawans" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;" vertex="1" parent="1">
+            <mxGeometry x="100" y="80" width="220" height="340" as="geometry" />
+          </mxCell>
+          <mxCell id="Karyawans_r1" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="Karyawans">
+            <mxGeometry y="30" width="220" height="20" as="geometry" />
+          </mxCell>
+          <mxCell id="Karyawans_c1" value="PK" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;" vertex="1" parent="Karyawans_r1">
+            <mxGeometry width="40" height="20" as="geometry">
+              <mxRectangle width="40" height="20" as="alternateBounds" />
+            </mxGeometry>
+          </mxCell>
+          <mxCell id="Karyawans_c2" value="id (BigInt)" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=1;overflow=hidden;" vertex="1" parent="Karyawans_r1">
+            <mxGeometry x="40" width="180" height="20" as="geometry">
+              <mxRectangle width="180" height="20" as="alternateBounds" />
+            </mxGeometry>
+          </mxCell>
+
+          <!-- Karyawans standard columns -->
+          <mxCell id="K_cols" value="&#10;nik&#10;nama&#10;email&#10;password&#10;jenis_kelamin&#10;tanggal_lahir&#10;divisi&#10;jabatan&#10;status_karyawan&#10;foto&#10;face_descriptors&#10;face_photos&#10;face_enrolled_at&#10;created_at&#10;updated_at" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;" vertex="1" parent="Karyawans">
+            <mxGeometry y="50" width="220" height="290" as="geometry" />
+          </mxCell>
+
+          <!-- Presensis Table -->
+          <mxCell id="Presensis" value="presensis" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;" vertex="1" parent="1">
+            <mxGeometry x="450" y="30" width="240" height="420" as="geometry" />
+          </mxCell>
+          
+          <mxCell id="Presensis_r1" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="Presensis">
+            <mxGeometry y="30" width="240" height="20" as="geometry" />
+          </mxCell>
+          <mxCell id="Presensis_c1" value="PK" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;" vertex="1" parent="Presensis_r1">
+            <mxGeometry width="40" height="20" as="geometry" />
+          </mxCell>
+          <mxCell id="Presensis_c2" value="id (BigInt)" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=1;overflow=hidden;" vertex="1" parent="Presensis_r1">
+            <mxGeometry x="40" width="200" height="20" as="geometry" />
+          </mxCell>
+
+          <mxCell id="Presensis_r2" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="Presensis">
+            <mxGeometry y="50" width="240" height="20" as="geometry" />
+          </mxCell>
+          <mxCell id="Presensis_c3" value="FK" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=2;overflow=hidden;" vertex="1" parent="Presensis_r2">
+            <mxGeometry width="40" height="20" as="geometry" />
+          </mxCell>
+          <mxCell id="Presensis_c4" value="karyawan_id (BigInt)" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=2;overflow=hidden;" vertex="1" parent="Presensis_r2">
+            <mxGeometry x="40" width="200" height="20" as="geometry" />
+          </mxCell>
+
+          <mxCell id="Presensis_r3" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="Presensis">
+            <mxGeometry y="70" width="240" height="20" as="geometry" />
+          </mxCell>
+          <mxCell id="Presensis_c5" value="FK" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=2;overflow=hidden;" vertex="1" parent="Presensis_r3">
+            <mxGeometry width="40" height="20" as="geometry" />
+          </mxCell>
+          <mxCell id="Presensis_c6" value="izin_approved_by (BigInt)" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=2;overflow=hidden;" vertex="1" parent="Presensis_r3">
+            <mxGeometry x="40" width="200" height="20" as="geometry" />
+          </mxCell>
+
+          <!-- Presensis standard columns -->
+          <mxCell id="P_cols" value="&#10;nik&#10;nama&#10;waktu_datang&#10;waktu_pulang&#10;latitude&#10;longitude&#10;status&#10;status_izin&#10;keterangan&#10;bukti&#10;cuti_group_id&#10;cuti_start&#10;cuti_end&#10;izin_approved_at&#10;izin_reject_reason&#10;created_at&#10;updated_at" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=46;overflow=hidden;" vertex="1" parent="Presensis">
+            <mxGeometry y="90" width="240" height="330" as="geometry" />
+          </mxCell>
+
+          <!-- Users Table -->
+          <mxCell id="Users" value="users (Admin)" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;" vertex="1" parent="1">
+            <mxGeometry x="820" y="140" width="200" height="180" as="geometry" />
+          </mxCell>
+          <mxCell id="Users_r1" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="Users">
+            <mxGeometry y="30" width="200" height="20" as="geometry" />
+          </mxCell>
+          <mxCell id="Users_c1" value="PK" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;" vertex="1" parent="Users_r1">
+            <mxGeometry width="40" height="20" as="geometry" />
+          </mxCell>
+          <mxCell id="Users_c2" value="id (BigInt)" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=1;overflow=hidden;" vertex="1" parent="Users_r1">
+            <mxGeometry x="40" width="160" height="20" as="geometry" />
+          </mxCell>
+
+          <!-- Users standard columns -->
+          <mxCell id="U_cols" value="&#10;name&#10;email&#10;password&#10;role&#10;created_at&#10;updated_at" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;" vertex="1" parent="Users">
+            <mxGeometry y="50" width="200" height="130" as="geometry" />
+          </mxCell>
+
+          <!-- Relationships -->
+          <!-- karyawans.id -> presensis.karyawan_id -->
+          <mxCell id="Rel_K_P" value="1..N" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="Karyawans_c2" target="Presensis_c4">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+
+          <!-- users.id -> presensis.izin_approved_by -->
+          <mxCell id="Rel_U_P" value="1..N" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="Users_c2" target="Presensis_c6">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+
+        </root>
+      </mxGraphModel>
+    </diagram>
+  </mxfile>
