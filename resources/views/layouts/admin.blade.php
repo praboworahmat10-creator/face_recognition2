@@ -260,6 +260,9 @@
             <a href="{{ route('admin.izin') }}" class="nav-item {{ request()->routeIs('admin.izin') ? 'active' : '' }}">
                 <i class="fa fa-calendar-check"></i> Izin & Cuti
             </a>
+            <a href="{{ route('admin.slip-gaji.index') }}" class="nav-item {{ request()->routeIs('admin.slip-gaji.*') ? 'active' : '' }}">
+                <i class="fa fa-file-invoice-dollar"></i> Slip Gaji
+            </a>
         </div>
 
         <div class="nav-section">

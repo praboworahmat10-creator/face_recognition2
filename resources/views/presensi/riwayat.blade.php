@@ -158,6 +158,7 @@
         <a href="{{ route('presensi') }}" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
         <a href="{{ route('presensi') }}" class="nav-item"><i class="fas fa-fingerprint"></i> Presensi</a>
         <a href="{{ route('presensi.riwayat') }}" class="nav-item active"><i class="fas fa-history"></i> Riwayat Presensi</a>
+        <a href="{{ route('slip-gaji.index') }}" class="nav-item"><i class="fas fa-file-invoice-dollar"></i> Slip Gaji</a>
         <a href="{{ route('profil') }}" class="nav-item"><i class="fas fa-user"></i> Profil</a>
 
         <div class="nav-label">Pengajuan</div>

@@ -6,7 +6,9 @@ use App\Http\Controllers\PresensiController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KaryawanSelfEnrollController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\SlipGajiController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\SlipGajiController as AdminSlipGajiController;
 
 // ═══════════════════════════════════════
 // ROOT
@@ -74,6 +76,14 @@ Route::middleware(['auth', 'role:karyawan'])->group(function () {
         [AuthController::class, 'profilForm'])->name('profil');
     Route::put('/profil/password',
         [AuthController::class, 'gantiPassword'])->name('profil.password');
+
+    // Slip Gaji — hanya milik sendiri & berstatus published
+    Route::get('/slip-gaji',
+        [SlipGajiController::class, 'index'])->name('slip-gaji.index');
+    Route::get('/slip-gaji/{id}',
+        [SlipGajiController::class, 'show'])->whereNumber('id')->name('slip-gaji.show');
+    Route::get('/slip-gaji/{id}/cetak',
+        [SlipGajiController::class, 'cetak'])->whereNumber('id')->name('slip-gaji.cetak');
 });
 
 // ═══════════════════════════════════════
@@ -102,6 +112,20 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
         [KaryawanController::class, 'enrollFace'])->name('karyawan.enroll-face');
     Route::delete('/karyawan/{karyawan}/delete-face',
         [KaryawanController::class, 'deleteFace'])->name('karyawan.delete-face');
+
+    // ── SLIP GAJI ──
+    // Helper auto-hitung rekap presensi untuk form create/edit
+    Route::get('/slip-gaji/helper/hitung-presensi',
+        [AdminSlipGajiController::class, 'hitungPresensi'])->name('slip-gaji.hitung-presensi');
+    Route::get('/slip-gaji/{slipGaji}/cetak',
+        [AdminSlipGajiController::class, 'cetak'])->name('slip-gaji.cetak');
+    Route::post('/slip-gaji/{slipGaji}/publish',
+        [AdminSlipGajiController::class, 'publish'])->name('slip-gaji.publish');
+    Route::post('/slip-gaji/{slipGaji}/unpublish',
+        [AdminSlipGajiController::class, 'unpublish'])->name('slip-gaji.unpublish');
+
+    Route::resource('slip-gaji', AdminSlipGajiController::class)
+        ->parameters(['slip-gaji' => 'slipGaji']);
 
     // Kelola Izin/Sakit (Pindahan dari Dosen)
     Route::get('/izin',                [DashboardController::class, 'izin'])->name('izin');

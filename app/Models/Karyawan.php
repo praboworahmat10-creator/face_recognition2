@@ -69,6 +69,13 @@ class Karyawan extends Authenticatable
                     ->whereYear('created_at', now()->year);
     }
 
+    public function slipGaji()
+    {
+        return $this->hasMany(SlipGaji::class, 'karyawan_id')
+                    ->orderByDesc('tahun')
+                    ->orderByDesc('bulan');
+    }
+
     // ─────────────────────────────────────────────
     // ACCESSORS
     // ─────────────────────────────────────────────

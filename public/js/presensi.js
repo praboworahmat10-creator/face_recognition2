@@ -20,6 +20,8 @@ const engine = new FaceRecognitionEngine('/models', {
 let currentStudent = null, faceVerified = false, locationVerified = false;
 let userLat = null, userLng = null;
 let frameCount = 0, lastFPSTime = Date.now(), simCounter = 0;
+let submitInFlight = false;
+let detectErrorCount = 0;
 let holdMatchStart = 0;
 
 
@@ -33,6 +35,134 @@ function speakText(text) {
         msg.pitch = 1.0;
         window.speechSynthesis.speak(msg);
     }
+}
+
+// ══════════════════════════════════════════════════════════════
+// FASE 1 — Overlay proses & pesan error yang manusiawi
+// ══════════════════════════════════════════════════════════════
+
+function showOverlay(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('show');
+}
+function hideOverlay(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('show');
+}
+function hideAllOverlays() {
+    ['confirmOverlay', 'savingOverlay', 'resultOverlay'].forEach(hideOverlay);
+}
+
+/**
+ * Terjemahkan error teknis menjadi judul, penjelasan, saran perbaikan,
+ * dan tombol pemulihan. Menggantikan alert() dan toast teknis (M5, M11).
+ */
+function describeError(kind, detail) {
+    const map = {
+        camera_denied: {
+            title: 'Aplikasi perlu izin kamera',
+            sub: 'Presensi memakai kamera untuk mengenali wajah Anda.',
+            hints: ['Ketuk ikon kunci di bilah alamat browser', 'Pilih "Izinkan" untuk Kamera', 'Muat ulang halaman ini'],
+        },
+        need_https: {
+            title: 'Kamera butuh koneksi aman',
+            sub: 'Di ponsel, kamera hanya bisa dipakai lewat alamat https://',
+            hints: ['Buka aplikasi lewat alamat yang dimulai https://', 'Hubungi admin bila alamatnya belum tersedia'],
+        },
+        model_failed: {
+            title: 'Gagal memuat pengenalan wajah',
+            sub: 'Berkas pengenalan wajah tidak berhasil diunduh.',
+            hints: ['Periksa koneksi internet Anda', 'Muat ulang halaman', 'Bila tetap gagal, hubungi admin'],
+        },
+        not_enrolled: {
+            title: 'Wajah Anda belum terdaftar',
+            sub: 'Daftarkan wajah Anda terlebih dahulu sebelum bisa absen.',
+            hints: ['Buka menu Profil untuk mendaftarkan wajah', 'Atau minta bantuan admin'],
+        },
+        no_match: {
+            title: 'Wajah belum bisa dikenali',
+            sub: 'Pemindaian berakhir tanpa hasil yang cocok.',
+            hints: ['Hadap kamera lurus', 'Cari tempat yang lebih terang', 'Lepas masker atau kacamata hitam', 'Kedipkan mata dengan jelas'],
+        },
+        wrong_face: {
+            title: 'Wajah tidak cocok dengan akun ini',
+            sub: 'Wajah yang terdeteksi bukan milik akun yang sedang masuk.',
+            hints: ['Pastikan Anda masuk dengan akun sendiri', 'Keluar lalu masuk dengan akun yang benar'],
+        },
+        out_of_radius: {
+            title: 'Anda di luar area kantor',
+            sub: detail || 'Presensi hanya bisa dilakukan di lokasi kantor.',
+            hints: ['Dekatkan posisi Anda ke kantor', 'Pastikan GPS aktif dan akurat', 'Ketuk "Perbarui Lokasi" setelah berpindah'],
+        },
+        gps_failed: {
+            title: 'Lokasi tidak terdeteksi',
+            sub: 'Sistem tidak bisa membaca posisi Anda.',
+            hints: ['Aktifkan GPS / Layanan Lokasi', 'Izinkan akses lokasi untuk browser ini', 'Keluar ke area terbuka lalu coba lagi'],
+        },
+        offline: {
+            title: 'Tidak ada koneksi internet',
+            sub: 'Presensi Anda BELUM tersimpan.',
+            hints: ['Periksa koneksi internet Anda', 'Setelah tersambung, ketuk "Coba Lagi"'],
+        },
+        server: {
+            title: 'Server sedang bermasalah',
+            sub: detail || 'Presensi Anda belum tersimpan.',
+            hints: ['Coba beberapa saat lagi', 'Bila terus terjadi, hubungi admin'],
+        },
+        rejected: {
+            title: 'Presensi tidak dapat disimpan',
+            sub: detail || 'Server menolak permintaan presensi.',
+            hints: null,
+        },
+    };
+    return map[kind] || map.server;
+}
+
+/** Tampilkan keadaan GAGAL lengkap dengan tombol pemulihan. */
+function showErrorResult(kind, detail, actions) {
+    const info = describeError(kind, detail);
+    hideOverlay('confirmOverlay');
+    hideOverlay('savingOverlay');
+
+    const icon = document.getElementById('resultIcon');
+    icon.className = 'result-icon err';
+    icon.innerHTML = '<i class="fas fa-triangle-exclamation"></i>';
+
+    document.getElementById('resultTitle').textContent = info.title;
+    document.getElementById('resultSub').textContent = info.sub;
+
+    let body = '';
+    if (info.hints) {
+        body = '<div class="result-hints"><strong>Coba perbaiki ini:</strong><ul>' +
+            info.hints.map(h => `<li>${escapeHtml(h)}</li>`).join('') +
+            '</ul></div>';
+    }
+    document.getElementById('resultBody').innerHTML = body;
+
+    const acts = actions || [{ label: 'Tutup', primary: false, onClick: hideAllOverlays }];
+    renderResultActions(acts);
+    showOverlay('resultOverlay');
+}
+
+function renderResultActions(actions) {
+    const wrap = document.getElementById('resultActions');
+    wrap.innerHTML = '';
+    actions.forEach(a => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = a.primary ? 'btn-presensi-besar' : 'btn-batal';
+        b.textContent = a.label;
+        b.addEventListener('click', a.onClick);
+        wrap.appendChild(b);
+    });
+    const first = wrap.querySelector('button');
+    if (first) first.focus();
+}
+
+function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
 }
 
 // Clock & date
@@ -96,6 +226,23 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     });
 });
 
+// Esc menutup modal / dialog yang terbuka (A9)
+document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+
+    const openModalEl = document.querySelector('.modal-overlay.show');
+    if (openModalEl) { openModalEl.classList.remove('show'); return; }
+
+    // Dialog konfirmasi: Esc = batal. Kartu hasil: Esc = tutup.
+    // Overlay "menyimpan" sengaja tidak bisa ditutup.
+    if (document.getElementById('confirmOverlay')?.classList.contains('show')) {
+        hideOverlay('confirmOverlay');
+        cancelVerification();
+    } else if (document.getElementById('resultOverlay')?.classList.contains('show')) {
+        hideOverlay('resultOverlay');
+    }
+});
+
 // Status
 function setStatus(msg, type='') {
     const el = document.getElementById('scanStatus');
@@ -118,9 +265,10 @@ function setStatus(msg, type='') {
 // Camera
 async function startCamera() {
     if (!window.isSecureContext && !['localhost', '127.0.0.1'].includes(location.hostname)) {
-        const msg = 'Kamera di HP memerlukan HTTPS. Buka via https://IP-ANDA:8443 (jalankan: npm run serve:mobile)';
-        setStatus('Perlu HTTPS untuk kamera', 'error');
-        showToast(msg, 'error', 12000);
+        setStatus('Perlu koneksi aman (HTTPS) untuk kamera', 'error');
+        showErrorResult('need_https', null, [
+            { label: 'Kembali ke Beranda', primary: true, onClick: () => { hideAllOverlays(); switchView('dashboard'); } },
+        ]);
         document.getElementById('btnScanMasuk').disabled = true;
         document.getElementById('btnScanPulang').disabled = true;
         document.getElementById('btnScanMasuk').innerHTML = 'Perlu HTTPS';
@@ -152,8 +300,12 @@ async function startCamera() {
             showToast('Kamera aktif, model AI siap', 'success');
         }
     } catch(e) {
-        setStatus('Gagal akses kamera', 'error');
-        showToast('Izin kamera ditolak: ' + e.message, 'error');
+        console.error('getUserMedia error:', e);
+        setStatus('Tidak bisa mengakses kamera', 'error');
+        showErrorResult('camera_denied', null, [
+            { label: 'Muat Ulang Halaman', primary: true, onClick: () => location.reload() },
+            { label: 'Kembali ke Beranda', primary: false, onClick: () => { hideAllOverlays(); switchView('dashboard'); } },
+        ]);
     }
 }
 
@@ -168,10 +320,12 @@ async function loadFaceAPI() {
     } catch(e) {
         faceApiLoaded = false;
         console.error("Failed to load Face API or descriptors:", e);
-        // Tampilkan error ke layar secara paksa agar terbaca di screenshot
-        document.getElementById('camLocStatus').innerHTML = `<i class="fas fa-exclamation-triangle" style="color:var(--danger);"></i> <span style="color:var(--danger);font-size:12px;">Error: ${e.message || String(e)}</span>`;
-        alert("Gagal memuat AI: " + (e.message || String(e)));
-        showToast('Gagal memuat AI: ' + (e.message || String(e)), 'error', 10000);
+        setStatus('Gagal memuat pengenalan wajah', 'error');
+        // Panel error dalam layar, bukan alert() dengan pesan teknis (M5)
+        showErrorResult(e && e.kind === 'not_enrolled' ? 'not_enrolled' : 'model_failed', null, [
+            { label: 'Muat Ulang Halaman', primary: true, onClick: () => location.reload() },
+            { label: 'Kembali ke Beranda', primary: false, onClick: () => { hideAllOverlays(); switchView('dashboard'); } },
+        ]);
     }
 }
 
@@ -191,7 +345,9 @@ async function loadStudentDescriptors() {
                 if (targetData.length > 0) {
                     engine.setRegisteredFaces(targetData);
                 } else {
-                    showToast('Wajah Anda belum terdaftar di sistem!', 'warning');
+                    const err = new Error('Wajah belum terdaftar');
+                    err.kind = 'not_enrolled';
+                    throw err;
                 }
             } catch (jsonErr) {
                 throw new Error("Gagal parsing JSON dari server. Pastikan rute API tidak ter-redirect (misal ke halaman login).");
@@ -230,11 +386,14 @@ async function startScan(jenis) {
 
     let attempts = 0;
     const id = setInterval(async () => {
-        if (++attempts > 60) { // Timeout dinaikkan ke 18 detik (60 * 300ms) untuk memberi waktu user
+        if (++attempts > 60) { // 18 detik (60 x 300ms)
             clearInterval(id);
             stopScanUI();
-            setStatus('Waktu habis! Anda belum mengedipkan mata.', 'error');
-            showToast('Sesi pemindaian berakhir (Waktu habis)', 'error');
+            setStatus('Waktu pemindaian habis', 'error');
+            showErrorResult('no_match', null, [
+                { label: 'Coba Lagi', primary: true, onClick: () => { hideAllOverlays(); startScan(jenis); } },
+                { label: 'Batal', primary: false, onClick: () => { hideAllOverlays(); clearIdentity(); } },
+            ]);
             return;
         }
         await detectAndRecognize(id);
@@ -299,9 +458,12 @@ async function detectAndRecognize(intervalId) {
                 if (NIK_LOGIN && matchedNIK !== NIK_LOGIN) {
                     clearInterval(intervalId);
                     stopScanUI();
-                    setStatus('Wajah tidak sesuai dengan akun ini!', 'error');
-                    showToast('Wajah bukan milik akun yang login!', 'error');
+                    setStatus('Wajah tidak sesuai dengan akun ini', 'error');
                     holdMatchStart = 0;
+                    showErrorResult('wrong_face', null, [
+                        { label: 'Coba Lagi', primary: true, onClick: () => { hideAllOverlays(); startScan(scanIntent); } },
+                        { label: 'Tutup', primary: false, onClick: () => { hideAllOverlays(); clearIdentity(); } },
+                    ]);
                     return;
                 }
             } else if (match.distance <= engine.matchThreshold && match.margin < engine.matchMargin) {
@@ -346,7 +508,22 @@ async function detectAndRecognize(intervalId) {
             document.getElementById('faceBox').style.borderColor = 'var(--emerald)';
             document.getElementById('faceLabel').textContent = 'Wajah Terdeteksi';
         }
-    } catch(e) {}
+    } catch(e) {
+        // Jangan menelan error diam-diam (M4): catat dan beri tahu pengguna
+        // bila terjadi berulang, agar layar tidak membeku tanpa penjelasan.
+        console.error('detectAndRecognize error:', e);
+        detectErrorCount++;
+        if (detectErrorCount >= 5) {
+            clearInterval(intervalId);
+            stopScanUI();
+            detectErrorCount = 0;
+            setStatus('Pemindaian bermasalah', 'error');
+            showErrorResult('model_failed', null, [
+                { label: 'Coba Lagi', primary: true, onClick: () => { hideAllOverlays(); startScan(scanIntent); } },
+                { label: 'Muat Ulang Halaman', primary: false, onClick: () => location.reload() },
+            ]);
+        }
+    }
 }
 
 function simulateFaceDetection(intervalId) {
@@ -489,12 +666,16 @@ function getLocation() {
         } else {
             locationVerified = false;
             setLocUI('err', 'Di Luar Radius', `${dist}m (maks. ${MAX_RADIUS}m)`);
-            showToast(`Terlalu jauh dari kantor: ${dist}m`, 'error');
+            showToast(`Anda ${dist} m dari kantor — maksimal ${MAX_RADIUS} m`, 'warning', 6000);
         }
         checkReady();
     }, err => {
         setLocUI('err', 'Gagal Ambil Lokasi', err.message);
-        showToast('Gagal mendapatkan GPS', 'error');
+        console.error('Geolocation error:', err);
+        showErrorResult('gps_failed', null, [
+            { label: 'Coba Lagi', primary: true, onClick: () => { hideAllOverlays(); getLocation(); } },
+            { label: 'Tutup', primary: false, onClick: hideAllOverlays },
+        ]);
     }, { enableHighAccuracy:true, timeout:15000 });
 }
 
@@ -532,17 +713,67 @@ function getDistance(lat1, lng1, lat2, lng2) {
 }
 
 function checkReady() {
-    if (faceVerified && locationVerified) {
-        submitPresensi();
+    if (faceVerified && locationVerified && currentStudent && !submitInFlight) {
+        askConfirmation();
     }
+}
+
+/**
+ * Langkah konfirmasi sebelum menyimpan.
+ * Pengguna melihat foto, nama, waktu, dan lokasi sebelum memutuskan.
+ */
+function askConfirmation() {
+    const isMasuk = scanIntent === 'masuk';
+    const jenisLabel = isMasuk ? 'masuk' : 'pulang';
+
+    document.getElementById('confirmTitle').textContent = `Simpan presensi ${jenisLabel}?`;
+    document.getElementById('confirmSub').textContent = 'Wajah dan lokasi Anda sudah terverifikasi.';
+    document.getElementById('confirmYesLabel').textContent = isMasuk ? 'Ya, Absen Masuk' : 'Ya, Absen Pulang';
+
+    const photo = document.getElementById('confirmPhoto');
+    if (currentStudent.snapshot) {
+        photo.src = currentStudent.snapshot;
+        photo.style.display = 'block';
+    } else {
+        photo.style.display = 'none';
+    }
+
+    document.getElementById('confirmName').textContent = currentStudent.name;
+    document.getElementById('confirmMeta').textContent =
+        'NIK ' + currentStudent.nik + (currentStudent.divisi && currentStudent.divisi !== '—' ? ' · ' + currentStudent.divisi : '');
+    document.getElementById('confirmTime').textContent =
+        new Date().toLocaleTimeString('id-ID', { hour12: false }) + ' WIB';
+
+    const dist = (userLat !== null && userLng !== null)
+        ? Math.round(getDistance(userLat, userLng, KANTOR_LAT, KANTOR_LNG))
+        : null;
+    document.getElementById('confirmLoc').textContent =
+        dist === null ? 'Terverifikasi' : `Di kantor · ${dist} m`;
+
+    const btnYes = document.getElementById('confirmYes');
+    const btnNo  = document.getElementById('confirmNo');
+    btnYes.onclick = () => { hideOverlay('confirmOverlay'); submitPresensi(); };
+    btnNo.onclick  = () => { hideOverlay('confirmOverlay'); cancelVerification(); };
+
+    showOverlay('confirmOverlay');
+    btnYes.focus();
+}
+
+/** Pengguna membatalkan di dialog konfirmasi — bersihkan tanpa menyimpan. */
+function cancelVerification() {
+    clearIdentity();
+    setStatus('Presensi dibatalkan. Pilih Absen Masuk atau Pulang.', '');
+    showToast('Presensi dibatalkan', 'info');
 }
 
 async function submitPresensi() {
     if (!faceVerified || !locationVerified || !currentStudent) return;
-    
-    // UI Feedback
-    document.getElementById('autoSubmitCard').style.display = 'block';
-    
+    if (submitInFlight) return;            // cegah pengiriman ganda
+    submitInFlight = true;
+
+    // Hanya "sedang menyimpan" — BUKAN klaim berhasil (M1)
+    showOverlay('savingOverlay');
+
     const payload = {
         nik: currentStudent.nik, nama: currentStudent.name,
         latitude: userLat, longitude: userLng,
@@ -552,46 +783,157 @@ async function submitPresensi() {
         jenis_presensi: scanIntent,
         _token: document.querySelector('meta[name="csrf-token"]').content
     };
+
     try {
         const res = await fetch('/presensi/simpan', {
             method:'POST',
             headers:{ 'Content-Type':'application/json', 'X-CSRF-TOKEN':payload._token },
             body: JSON.stringify(payload)
         });
-        const data = await res.json();
-        if (data.success) {
-            const msgTts = scanIntent === 'masuk' ? 'Absen Masuk Berhasil' : 'Absen Pulang Berhasil';
-            speakText(msgTts + ', ' + currentStudent.name);
-            showToast(`${data.message} — ${currentStudent.name}`, 'success', 5000);
-            addRecent(currentStudent, data.data.status); // backend now returns 'datang' or 'pulang'
-            resetForm();
-        } else {
-            showToast(data.message || 'Gagal menyimpan', 'error');
+
+        let data = null;
+        try {
+            data = await res.json();
+        } catch (parseErr) {
+            hideOverlay('savingOverlay');
+            submitInFlight = false;
+            showErrorResult('server', 'Server membalas dengan format yang tidak dikenali.', [
+                { label: 'Coba Lagi', primary: true, onClick: () => { hideAllOverlays(); submitPresensi(); } },
+                { label: 'Tutup', primary: false, onClick: () => { hideAllOverlays(); clearIdentity(); } },
+            ]);
+            return;
         }
-    } catch(e) {
-        showToast('Terjadi kesalahan koneksi', 'error');
+
+        hideOverlay('savingOverlay');
+        submitInFlight = false;
+
+        // Sukses HANYA bila server mengonfirmasi
+        if (res.ok && data && data.success) {
+            showSuccessResult(data);
+        } else {
+            const pesan = (data && data.message) ? data.message : null;
+            const kind = res.status === 422 && pesan && /lokasi|jarak|radius/i.test(pesan)
+                ? 'out_of_radius' : 'rejected';
+            showErrorResult(kind, pesan, [
+                { label: 'Tutup', primary: true, onClick: () => { hideAllOverlays(); clearIdentity(); } },
+            ]);
+        }
+    } catch (e) {
+        hideOverlay('savingOverlay');
+        submitInFlight = false;
+        const kind = (navigator.onLine === false) ? 'offline' : 'offline';
+        showErrorResult(kind, null, [
+            { label: 'Coba Lagi', primary: true, onClick: () => { hideAllOverlays(); submitPresensi(); } },
+            { label: 'Tutup', primary: false, onClick: () => { hideAllOverlays(); clearIdentity(); } },
+        ]);
     }
-    
-    document.getElementById('autoSubmitCard').style.display = 'none';
 }
 
-function resetForm() {
-    faceVerified = false; currentStudent = null;
-    // Biarkan identitas dan metrik tetap tampil di layar
-    // document.getElementById('identityName').innerHTML = '<span class="placeholder">Belum terdeteksi</span>';
-    // document.getElementById('identityNIK').textContent = 'NIK: —';
-    // ['identityDivisi','identityJabatan'].forEach(id => document.getElementById(id).textContent = '—');
-    // document.getElementById('identityAvatar').classList.remove('verified');
-    // document.getElementById('confFill').style.width = '0%';
-    // document.getElementById('confVal').textContent = '0%';
-    // ['metricConf','metricLandmarks','metricEyeDist'].forEach(id => document.getElementById(id).textContent = '—');
-    
+/**
+ * Kartu bukti presensi (M3) — tidak hilang sendiri,
+ * pengguna menutupnya dan bisa di-screenshot sebagai pegangan.
+ */
+function showSuccessResult(data) {
+    const d = data.data || {};
+    const isMasuk = d.status === 'datang';
+    const jenisLabel = isMasuk ? 'Masuk' : 'Pulang';
+
+    const icon = document.getElementById('resultIcon');
+    icon.className = 'result-icon';
+    icon.innerHTML = '<i class="fas fa-check"></i>';
+
+    document.getElementById('resultTitle').textContent = `Absen ${jenisLabel.toLowerCase()} tercatat`;
+    document.getElementById('resultSub').textContent = data.message || 'Presensi Anda sudah tersimpan.';
+
+    const nama = d.nama || currentStudent.name;
+    const foto = currentStudent.snapshot;
+    const inisial = (nama || 'K').trim().charAt(0).toUpperCase();
+    const avatar = foto
+        ? `<img src="${foto}" alt="Foto presensi ${escapeHtml(nama)}">`
+        : `<div class="result-avatar-fallback">${escapeHtml(inisial)}</div>`;
+
+    const dist = (d.distance_meter !== undefined && d.distance_meter !== null)
+        ? Math.round(d.distance_meter) + ' m dari kantor'
+        : ((userLat !== null && userLng !== null)
+            ? Math.round(getDistance(userLat, userLng, KANTOR_LAT, KANTOR_LNG)) + ' m dari kantor'
+            : 'Terverifikasi');
+
+    document.getElementById('resultBody').innerHTML = `
+        <div class="result-identity">
+            ${avatar}
+            <div>
+                <h4>${escapeHtml(nama)}</h4>
+                <p>NIK ${escapeHtml(d.nik || currentStudent.nik)}</p>
+            </div>
+        </div>
+        <dl class="result-rows">
+            <div class="result-row"><dt>Waktu</dt><dd class="mono">${escapeHtml(d.waktu || '—')} WIB</dd></div>
+            <div class="result-row"><dt>Jenis</dt><dd>${jenisLabel}</dd></div>
+            <div class="result-row"><dt>Lokasi</dt><dd>${escapeHtml(dist)}</dd></div>
+        </dl>`;
+
+    renderResultActions([
+        { label: 'Selesai', primary: true, onClick: () => { hideAllOverlays(); finishPresensi(d); } },
+    ]);
+
+    showOverlay('resultOverlay');
+
+    const msgTts = isMasuk ? 'Absen Masuk Berhasil' : 'Absen Pulang Berhasil';
+    speakText(msgTts + ', ' + nama);
+}
+
+/** Dipanggil setelah pengguna menutup kartu hasil. */
+function finishPresensi(d) {
+    addRecent(currentStudent, d.status);
+    clearIdentity();
+    setStatus('Presensi tersimpan. Siap untuk aktivitas berikutnya.', 'matched');
+}
+
+/**
+ * Bersihkan identitas dari layar (M2).
+ * Penting untuk privasi bila perangkat dipakai bergantian.
+ */
+function clearIdentity() {
+    faceVerified = false;
+    currentStudent = null;
+    holdMatchStart = 0;
+
+    const name = document.getElementById('identityName');
+    if (name) name.textContent = 'Belum terdeteksi';
+    const nik = document.getElementById('identityNIK');
+    if (nik) nik.textContent = 'NIK: —';
+    ['identityDivisi', 'identityJabatan'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '—';
+    });
+
+    const avatar = document.getElementById('identityAvatar');
+    if (avatar) avatar.classList.remove('verified');
+    const photo = document.getElementById('identityPhoto');
+    if (photo) { photo.src = ''; photo.style.display = 'none'; }
+    const avatarIcon = document.querySelector('#identityAvatar i');
+    if (avatarIcon) avatarIcon.style.display = '';
+
+    const card = document.getElementById('identityCard');
+    if (card) { card.classList.remove('show'); card.style.display = 'none'; }
+
+    const confFill = document.getElementById('confFill');
+    if (confFill) confFill.style.width = '0%';
+    const confVal = document.getElementById('confVal');
+    if (confVal) confVal.textContent = '0%';
+    ['metricConf', 'metricLiveness'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '—';
+    });
+
+    // Buang foto konfirmasi agar wajah tidak tertinggal di DOM
+    const cPhoto = document.getElementById('confirmPhoto');
+    if (cPhoto) cPhoto.src = '';
+
     hideFaceBox();
     const landmarkSvg = document.getElementById('landmarkSvg');
     if (landmarkSvg) landmarkSvg.innerHTML = '';
-    
-    setStatus('Presensi Berhasil. Siap untuk aktivitas berikutnya.', 'active');
-    checkReady();
+    if (engine && engine.isReady) engine.resetLiveness();
 }
 
 // ── KOPPOSINDO UI LOGIC ──
@@ -644,6 +986,9 @@ function switchView(view) {
         if (topbarTitle) topbarTitle.textContent = 'Dashboard';
         setBottomNavActive('dashboard');
         stopCamera();
+        // Jangan tinggalkan wajah/nama orang lain di layar (M2)
+        hideAllOverlays();
+        clearIdentity();
     }
 }
 
@@ -765,7 +1110,10 @@ let dashMap = null;
 function initDashboardMap() {
     if(!document.getElementById('mapDashboard')) return;
     dashMap = L.map('mapDashboard', { zoomControl: false }).setView([KANTOR_LAT, KANTOR_LNG], 16);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(dashMap);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+}).addTo(dashMap);
     L.circle([KANTOR_LAT, KANTOR_LNG], { color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.2, radius: MAX_RADIUS }).addTo(dashMap);
     L.marker([KANTOR_LAT, KANTOR_LNG]).addTo(dashMap);
 }

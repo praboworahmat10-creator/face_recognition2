@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="theme-color" content="#3B82F6">
+    <meta name="theme-color" content="#C2410C">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,7 +17,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="{{ asset('css/presensi.css') }}?v=4">
+    <link rel="stylesheet" href="{{ asset('css/presensi.css') }}?v=5">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 </head>
 <body>
@@ -46,6 +46,9 @@
             <a href="{{ route('presensi.riwayat') }}" class="nav-item">
                 <i class="fas fa-history"></i> Riwayat Presensi
             </a>
+            <a href="{{ route('slip-gaji.index') }}" class="nav-item">
+                <i class="fas fa-file-invoice-dollar"></i> Slip Gaji
+            </a>
             
             <button class="nav-item" onclick="openModal('izin')">
                 <i class="fas fa-file-alt"></i> Pengajuan Izin
@@ -72,9 +75,9 @@
 
     {{-- MOBILE TOPBAR --}}
     <nav class="mobile-topbar">
-        <button class="mobile-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+        <button class="mobile-btn" onclick="toggleSidebar()" aria-label="Buka menu"><i class="fas fa-bars" aria-hidden="true"></i></button>
         <h1>Dashboard</h1>
-        <button class="mobile-btn" style="font-size: 1.1rem;"><i class="fas fa-bell"></i></button>
+        <span class="mobile-btn" aria-hidden="true"></span>
     </nav>
 
     {{-- MAIN CONTENT --}}
@@ -86,7 +89,7 @@
             <div class="header-section">
                 <div class="user-intro">
                     @if($karyawan && $karyawan->foto)
-                        <img src="{{ Storage::url($karyawan->foto) }}" alt="Foto" class="user-avatar">
+                        <img src="{{ Storage::url($karyawan->foto) }}" alt="Foto {{ Auth::user()->name ?? 'karyawan' }}" class="user-avatar">
                     @else
                         <div class="user-avatar" style="background:#E2E8F0; display:flex; align-items:center; justify-content:center; font-size:1.5rem; color:#64748B; font-weight:bold;">
                             {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}
@@ -209,11 +212,11 @@
                                             @if($rh->status == 'hadir')
                                                 <span class="badge-table bt-success">Hadir</span>
                                             @elseif($rh->status == 'izin')
-                                                <span class="badge-table" style="background:#FEF3C7;color:#D97706;">Izin</span>
+                                                <span class="badge-table" style="background:var(--warning-light);color:var(--warning);">Izin</span>
                                             @elseif($rh->status == 'sakit')
                                                 <span class="badge-table bt-danger">Sakit</span>
                                             @elseif($rh->status == 'cuti')
-                                                <span class="badge-table" style="background:#EFF6FF;color:#3B82F6;">Cuti</span>
+                                                <span class="badge-table" style="background:var(--info-light);color:var(--info);">Cuti</span>
                                             @else
                                                 <span class="badge-table bt-danger">{{ ucfirst($rh->status) }}</span>
                                             @endif
@@ -290,7 +293,7 @@
                     </div>
                 </div>
 
-                <div class="scan-status-alert" id="scanStatusAlert" style="display:none;">
+                <div class="scan-status-alert" id="scanStatusAlert" style="display:none;" role="status" aria-live="polite" aria-atomic="true">
                     <i class="fas fa-info-circle"></i> <span id="scanStatusText">Persiapan...</span>
                 </div>
 
@@ -383,7 +386,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Pengajuan Izin</h3>
-                <button class="modal-close" onclick="closeModal('izin')"><i class="fas fa-times"></i></button>
+                <button class="modal-close" onclick="closeModal('izin')" aria-label="Tutup"><i class="fas fa-times" aria-hidden="true"></i></button>
             </div>
             <div class="modal-body">
                 <form action="{{ route('presensi.izin') }}" method="POST" id="formIzin">
@@ -412,7 +415,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Pengajuan Sakit</h3>
-                <button class="modal-close" onclick="closeModal('sakit')"><i class="fas fa-times"></i></button>
+                <button class="modal-close" onclick="closeModal('sakit')" aria-label="Tutup"><i class="fas fa-times" aria-hidden="true"></i></button>
             </div>
             <div class="modal-body">
                 <form action="{{ route('presensi.sakit') }}" method="POST" id="formSakit" enctype="multipart/form-data">
@@ -444,7 +447,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Pengajuan Cuti</h3>
-                <button class="modal-close" onclick="closeModal('cuti')"><i class="fas fa-times"></i></button>
+                <button class="modal-close" onclick="closeModal('cuti')" aria-label="Tutup"><i class="fas fa-times" aria-hidden="true"></i></button>
             </div>
             <div class="modal-body">
                 <form action="{{ route('presensi.cuti') }}" method="POST" id="formCuti">
@@ -475,12 +478,68 @@
 
     <div class="toast-wrap" id="toastWrap"></div>
 
-    {{-- LOADING OVERLAY --}}
-    <div id="autoSubmitCard" style="display:none; position:fixed; inset:0; background:rgba(255,255,255,0.9); z-index:9999; flex-direction:column; align-items:center; justify-content:center;">
-        <i class="fas fa-check-circle" style="font-size:4rem; color:var(--success); margin-bottom:1rem;"></i>
-        <h2 style="font-weight:700; font-size:1.5rem; margin-bottom: 0.5rem;">Presensi Berhasil!</h2>
-        <p style="color:var(--text-muted);">Menyimpan data presensi Anda...</p>
+    {{-- ══════════════════════════════════════════════════════════
+         OVERLAY PROSES — 3 keadaan terpisah (Fase 1)
+         1. konfirmasi  2. menyimpan  3. hasil (berhasil / gagal)
+         Tidak ada klaim "berhasil" sebelum server mengonfirmasi.
+         ══════════════════════════════════════════════════════════ --}}
+
+    {{-- 1. KONFIRMASI sebelum simpan --}}
+    <div class="process-overlay" id="confirmOverlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+        <div class="process-box">
+            <h2 class="process-title" id="confirmTitle">Simpan presensi masuk?</h2>
+            <p class="process-sub" id="confirmSub">Wajah dan lokasi Anda sudah terverifikasi.</p>
+
+            <div class="confirm-preview">
+                <img id="confirmPhoto" src="" alt="Foto yang baru diambil">
+                <div>
+                    <h4 id="confirmName">—</h4>
+                    <p id="confirmMeta">—</p>
+                </div>
+            </div>
+
+            <dl class="result-rows">
+                <div class="result-row">
+                    <dt>Waktu</dt>
+                    <dd class="mono" id="confirmTime">—</dd>
+                </div>
+                <div class="result-row">
+                    <dt>Lokasi</dt>
+                    <dd id="confirmLoc">—</dd>
+                </div>
+            </dl>
+
+            <div class="process-actions">
+                <button type="button" class="btn-presensi-besar" id="confirmYes">
+                    <i class="fas fa-check" aria-hidden="true"></i> <span id="confirmYesLabel">Ya, Simpan</span>
+                </button>
+                <button type="button" class="btn-batal" id="confirmNo">Batal</button>
+            </div>
+        </div>
     </div>
+
+    {{-- 2. SEDANG MENYIMPAN --}}
+    <div class="process-overlay" id="savingOverlay" role="status" aria-live="polite">
+        <div class="process-box">
+            <div class="process-spinner" aria-hidden="true"></div>
+            <h2 class="process-title">Menyimpan presensi…</h2>
+            <p class="process-sub">Mohon tunggu, jangan tutup halaman ini.</p>
+        </div>
+    </div>
+
+    {{-- 3. HASIL — diisi oleh JS, ditutup manual oleh pengguna --}}
+    <div class="process-overlay" id="resultOverlay" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+        <div class="process-box">
+            <div class="result-icon" id="resultIcon" aria-hidden="true"><i class="fas fa-check"></i></div>
+            <h2 class="process-title" id="resultTitle">—</h2>
+            <p class="process-sub" id="resultSub">—</p>
+            <div id="resultBody"></div>
+            <div class="process-actions" id="resultActions"></div>
+        </div>
+    </div>
+
+    {{-- Kompatibilitas: elemen lama masih dirujuk sebagian JS --}}
+    <div id="autoSubmitCard" style="display:none;" aria-hidden="true"></div>
 <script src="{{ asset('js/face-api.js') }}"></script>
 <script src="{{ asset('js/FaceRecognitionEngine.js') }}"></script>
 <script>
@@ -494,7 +553,7 @@ window.PRESENSI_CONFIG = {
     detectionMinConfidence: {{ config('face.detection_min_confidence', 60) }},
 };
 </script>
-<script src="{{ asset('js/presensi.js') }}?v=5"></script>
+<script src="{{ asset('js/presensi.js') }}?v=6"></script>
 <script src="{{ asset('js/pwa.js') }}"></script>
 </body>
 </html>
